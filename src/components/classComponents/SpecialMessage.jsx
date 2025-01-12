@@ -1,6 +1,6 @@
-import React from "react";
-import parse from "html-react-parser";
-import styled from "styled-components";
+import React from 'react';
+import parse from 'html-react-parser';
+import styled from 'styled-components';
 
 const StyledSpecialMessage = styled.section`
   border: 2px solid var(--salmon);
@@ -10,7 +10,7 @@ const StyledSpecialMessage = styled.section`
 
   h3 {
     margin-bottom: 1rem;
-    font-family: "Lato", sans-serif;
+    font-family: 'Lato', sans-serif;
     font-weight: 900;
     font-size: 1.5rem;
   }
@@ -31,13 +31,11 @@ const StyledSpecialMessage = styled.section`
   }
 `;
 
-const SpecialMessage = ({ wpClass }) => {
+const SpecialMessage = ({ title, content }) => {
   return (
     <StyledSpecialMessage>
-      {wpClass.classGroup.optionalSpecialHeader && (
-        <h3>{wpClass.classGroup.optionalSpecialHeader}</h3>
-      )}
-      {parse(wpClass.classGroup.optionalSpecialMessage)}
+      {title && <h3>{title}</h3>}
+      {content}
     </StyledSpecialMessage>
   );
 };

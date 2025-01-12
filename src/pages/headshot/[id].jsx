@@ -4,7 +4,6 @@ import Layout from '../../components/Layout';
 import SessionHeader from '../../components/headshotComponents/SessionHeader';
 import Description from '../../components/headshotComponents/Description';
 import CancellationPolicy from '../../components/headshotComponents/CancellationPolicy';
-import AttendancePolicy from '../../components/headshotComponents/AttendancePolicy';
 import SpecialMessage from '../../components/headshotComponents/SpecialMessage';
 import AboutPhotographer from '../../components/headshotComponents/AboutPhotographer';
 import SessionDetails from '../../components/headshotComponents/SessionDetails';

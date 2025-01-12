@@ -28,11 +28,11 @@ export const StyledDescription = styled.section`
   }
 `;
 
-const Description = ({ wpClass }) => {
+const Description = ({ content }) => {
   return (
     <StyledDescription>
       <Accordion title="Description" defaultOpen={true} h3>
-        {parse(wpClass.content)}
+        {content}
       </Accordion>
     </StyledDescription>
   );

@@ -1,5 +1,6 @@
 import React from 'react';
 import styled from 'styled-components';
+import { concatenateName } from '../../utils/utils';
 
 const StyledClassDetails = styled.section`
   border: 2px solid var(--light-gray);
@@ -36,45 +37,53 @@ const StyledClassDetails = styled.section`
   }
 `;
 
-const ClassDetails = ({ wpClass }) => {
+const ClassDetails = ({ class_info }) => {
   return (
     <StyledClassDetails>
       <h3>Class Details</h3>
       <div className="details">
         <dl>
           <dt>Day</dt>
-          <dd>{wpClass.classGroup.day}</dd>
+          <dd>{class_info.day}</dd>
           <dt>Time</dt>
-          <dd>{wpClass.classGroup.time}</dd>
+          <dd>
+            {class_info.startTime} - {class_info.endTime}
+          </dd>
           <dt>Dates</dt>
           <dd>
             <ul>
-              {wpClass.classGroup.dates.map((date, idx) => {
-                return <li key={idx}>{date.date}</li>;
+              {class_info.dates.map((date, idx) => {
+                const [year, month, day] = date.split('-');
+                const date_obj = new Date(year, month - 1, day);
+                return (
+                  <li key={idx}>
+                    {new Intl.DateTimeFormat('en-US', {
+                      month: 'short',
+                      day: 'numeric',
+                      year: 'numeric',
+                    }).format(date_obj)}
+                  </li>
+                );
               })}
             </ul>
           </dd>
           <dt>Location</dt>
-          <dd className="location">
-            {wpClass.classGroup.location
-              .split(' ')
-              .splice(0, wpClass.classGroup.location.split(' ').length - 1, -1)
-              .join(' ')}
-            <br />
-            {
-              wpClass.classGroup.location.split(' ')[
-                wpClass.classGroup.location.split(' ').length - 1
-              ]
-            }
+          <dd className="location">{class_info.location}</dd>
+          <dt>Instructors</dt>
+          <dd>
+            {class_info.instructors.map((instructor, idx) => (
+              <span key={idx}>
+                {idx > 0 && ', '}
+                {concatenateName(instructor.name, instructor.lastName)}
+              </span>
+            ))}
           </dd>
-          <dt>Instructor</dt>
-          <dd>{wpClass.classGroup.instructor}</dd>
           <dt>Class Size</dt>
-          <dd>{wpClass.classGroup.classSize}</dd>
+          <dd>{class_info.classSize}</dd>
           <dt>Age</dt>
-          <dd>{wpClass.classGroup.age}</dd>
+          <dd>{class_info.age}</dd>
           <dt>Cost</dt>
-          <dd>${wpClass.classGroup.price}</dd>
+          <dd>${class_info.cost}</dd>
         </dl>
       </div>
     </StyledClassDetails>

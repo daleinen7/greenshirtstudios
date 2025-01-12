@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-// import useSWR from 'swr';
 import { loadStripe } from '@stripe/stripe-js';
 import styled from 'styled-components';
+import { GatsbyImage } from 'gatsby-plugin-image';
 
 export const StyledClassHeader = styled.div`
   background: var(--white);
@@ -19,9 +19,9 @@ export const StyledClassHeader = styled.div`
     margin-bottom: 1rem;
   }
 
-  img {
+  .gatsby-image-wrapper {
     width: 62%;
-    padding-right: 1rem;
+    margin-right: 1rem;
   }
 
   .info {
@@ -131,7 +131,7 @@ export const StyledClassHeader = styled.div`
   @media (max-width: 970px) {
     flex-direction: column;
 
-    img,
+    .gatsby-image-wrapper,
     .info {
       width: 100%;
       padding: 0;
@@ -140,7 +140,7 @@ export const StyledClassHeader = styled.div`
     .info {
       padding: 0 1rem;
     }
-    img {
+    .gatsby-image-wrapper {
       margin-bottom: 2rem;
     }
     button {
@@ -162,71 +162,61 @@ const getStripe = (test) => {
   return stripePromise;
 };
 
-// const fetcher = (...args) => fetch(...args).then((res) => res.json());
-
-const ClassHeader = ({ wpClass, session }) => {
+const ClassHeader = ({ class_info }) => {
   const [loading, setLoading] = useState(false);
-  const [data, setData] = useState(null);
+  const [spotsLeft, setSpotsLeft] = useState(null);
   const [error, setError] = useState(null);
   const [fetching, setFetching] = useState(false);
 
-  // const { data, error } = useSWR(
-  //   `https://greenshirtstudiowp.us/wp-json/wp/v2/class/${wpClass.databaseId}`,
-  //   fetcher
-  // );
-
   useEffect(() => {
-    const getData = async () => {
+    const getSpotsLeft = async (event, class_id) => {
       try {
         const response = await fetch(
-          `https://greenshirtstudiowp.us/wp-json/wp/v2/class/${wpClass.databaseId}`
+          `/.netlify/functions/handle-spotsleft?class_id=${class_info.contentful_id}`,
+          {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          }
         );
-        if (!response.ok) {
-          throw new Error(
-            `This is an HTTP error: The status is ${response.status}`
-          );
-        }
-        let actualData = await response.json();
-        setData(actualData);
-        setError(null);
+        const data = await response.json();
+        setSpotsLeft(data.spots_left);
       } catch (err) {
         setError(err.message);
-        setData(null);
+        setSpotsLeft(null);
       } finally {
         setLoading(false);
       }
     };
-    getData();
+    getSpotsLeft();
   }, []);
-
-  const spotsLeft = data ? `${data.acf.spots_left} spots left` : 'loading';
 
   const handlePurchase = async (e, paymentType) => {
     e.preventDefault();
     setLoading(true);
 
     const formData = {
-      test: wpClass.classGroup.program === 'Test',
+      test: true,
       paymentType: paymentType,
-      promotion: wpClass.classGroup.price > 0,
+      promotion: class_info.cost > 0,
       lineItems: [
         {
           price:
             paymentType === 'payment'
-              ? wpClass.classGroup.stripeId
-              : wpClass.classGroup.stripeInstallmentId,
+              ? class_info.stripeProductId
+              : class_info.stripeInstallmentId,
           quantity: 1,
         },
       ],
-      dayOfWeek: wpClass.classGroup.day,
-      dbid: wpClass.databaseId,
-      className: wpClass.title,
-      time: wpClass.classGroup.time,
-      instructor: wpClass.classGroup.linkInstructor.title,
-      location: wpClass.classGroup.location,
-      slug: wpClass.slug,
-      classDates: wpClass.classGroup.dates,
-      session: session,
+      dayOfWeek: class_info.day,
+      className: class_info.name,
+      time: class_info.startTime,
+      instructor: class_info.instructors[0].name,
+      location: class_info.location,
+      slug: class_info.slug,
+      classDates: class_info.dates.join(', '),
+      session: class_info.session,
     };
 
     const response = await fetch('/.netlify/functions/create-checkout', {
@@ -237,7 +227,7 @@ const ClassHeader = ({ wpClass, session }) => {
       body: JSON.stringify(formData),
     }).then((res) => res.json());
 
-    const stripe = await getStripe(wpClass.classGroup.program === 'Test');
+    const stripe = await getStripe(true);
     const { error } = await stripe.redirectToCheckout({
       sessionId: response.sessionId,
     });
@@ -249,31 +239,32 @@ const ClassHeader = ({ wpClass, session }) => {
 
   return (
     <StyledClassHeader>
-      {wpClass.classGroup.classImage && (
-        <img
-          src={wpClass.classGroup.classImage.sourceUrl}
-          alt={wpClass.title}
+      {class_info.coverImage && (
+        <GatsbyImage
+          image={class_info.coverImage.gatsbyImageData}
+          alt={class_info.name}
         />
       )}
       <div className="info">
-        <h2>{wpClass.title}</h2>
-        <p>{`${wpClass.classGroup.day}, ${wpClass.classGroup.dates[0].date} - ${
-          wpClass.classGroup.dates[wpClass.classGroup.dates.length - 1].date
-        }, ${wpClass.classGroup.time} with ${
-          wpClass.classGroup.linkInstructor.title
+        <h2>{class_info.name}</h2>
+        <p>{`${class_info.day}, ${class_info.dates[0]} - ${
+          class_info.dates[class_info.dates.length - 1]
+        }, ${class_info.startTime} - ${class_info.endTime} with ${
+          class_info.instructors[0].name
         }`}</p>
 
         <div className="spots-left">
-          <span>{spotsLeft}</span>
+          <span>
+            {spotsLeft == null ? 'Loading' : `${spotsLeft} spots left`}
+          </span>
         </div>
 
         <div className="price">
-          {data &&
-            data.acf.spots_left > 0 &&
-            (wpClass.classGroup.price > 0 ? (
+          {spotsLeft > 0 &&
+            (class_info.cost > 0 ? (
               <>
-                ${wpClass.classGroup.price} <br />
-                {wpClass.classGroup.stripeInstallmentId && (
+                ${class_info.cost} <br />
+                {class_info.stripeInstallmentId && (
                   <small>or pay in three installments (payment plan)</small>
                 )}
               </>
@@ -284,8 +275,8 @@ const ClassHeader = ({ wpClass, session }) => {
 
         <ul className="pricing-buttons">
           <li>
-            {data ? (
-              data.acf.spots_left > 0 ? (
+            {spotsLeft != null ? (
+              spotsLeft > 0 ? (
                 <button
                   className={'register'}
                   disabled={loading}
@@ -302,7 +293,7 @@ const ClassHeader = ({ wpClass, session }) => {
               </button>
             )}
           </li>
-          {wpClass.classGroup.stripeInstallmentId && (
+          {class_info.stripeInstallmentId && (
             <li>
               <button
                 className={'installment'}

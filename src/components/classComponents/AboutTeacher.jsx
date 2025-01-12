@@ -1,8 +1,9 @@
-import React from "react";
-import { Link } from "gatsby";
-import { GatsbyImage } from "gatsby-plugin-image";
-import parse from "html-react-parser";
-import styled from "styled-components";
+import React from 'react';
+import { Link } from 'gatsby';
+import { GatsbyImage } from 'gatsby-plugin-image';
+import styled from 'styled-components';
+import { documentToReactComponents } from '@contentful/rich-text-react-renderer';
+import { concatenateName } from '../../utils/utils';
 
 const StyledAboutTeacher = styled.section`
   display: flex;
@@ -15,7 +16,7 @@ const StyledAboutTeacher = styled.section`
   h3 {
     font-size: 1.5rem;
     margin-top: 1rem;
-    font-family: "Lato", sans-serif;
+    font-family: 'Lato', sans-serif;
   }
 
   img {
@@ -52,26 +53,34 @@ const StyledAboutTeacher = styled.section`
   }
 `;
 
-const AboutTeacher = ({ wpClass }) => {
+const AboutTeacher = ({ instructors }) => {
   return (
-    <StyledAboutTeacher>
-      <GatsbyImage
-        image={wpClass.classGroup.linkInstructor.instructors.image.gatsbyImage}
-        alt={wpClass.classGroup.linkInstructor.instructors.title}
-      />
-      <h3>About the Teacher</h3>
-      <div className="bio">
-        {parse(wpClass.classGroup.linkInstructor.content)}
-      </div>
-      <div className="learn-more">
-        <Link
-          to={`/${wpClass.classGroup.linkInstructor.slug}`}
-          className="button empty"
-        >
-          {`About ${wpClass.classGroup.linkInstructor.title}`}
-        </Link>
-      </div>
-    </StyledAboutTeacher>
+    <>
+      {instructors.map((instructor, idx) => {
+        const concatenated_name = concatenateName(
+          instructor.name,
+          instructor.lastName
+        );
+
+        return (
+          <StyledAboutTeacher key={idx}>
+            <GatsbyImage
+              image={instructor.profilePicture.gatsbyImageData}
+              alt={concatenated_name}
+            />
+            <h3>About the Teacher</h3>
+            <div className="bio">
+              {documentToReactComponents(JSON.parse(instructor.bio.raw))}
+            </div>
+            <div className="learn-more">
+              <Link to={`/${instructor.slug}`} className="button empty">
+                {`About ${concatenated_name}`}
+              </Link>
+            </div>
+          </StyledAboutTeacher>
+        );
+      })}
+    </>
   );
 };
 export default AboutTeacher;
